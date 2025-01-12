@@ -1,0 +1,1118 @@
+define 3 goals:
+what is certain to achieve: em marte, encontrar o tubo e pose estimation
+what we could achieve: em qualquer lado, encontrar o tubo e pose estimation
+what is most impossible to achieve: em qualquer lado, outros objetos interessantes e pose estimation
+
+what is the problem and the ideas to solve the problem
+
+https://paperswithcode.com/
+
+
+uber business model
+
+
+detetar a distância do robo ao objeto
+detetar objetos não identificados de modo a serem revistos por humanos depois
+
+
+
+Questões a colocar: estamos limitados a usar o nosso dataset e ao tubo em si ou podemos ir para além desta ideia?
+
+
+- Problema a resolver: A "Mars Sample Return campaign" envolve o uso de um rover, o Sample Fetch Rover, que irá fazer uma recolha dos tubos deixados por outro rover, o Perseverance, que recolhe amostras aos pares e deixa, no solo de Marte, uma dessas amostras caso algo aconteça à amostra principal em causa. 
+	Para recolher os tubos, é necessário encontrá-los no solo de Marte, tendo em conta que os tubos poderão ter estado em movimento desde o momento em que o Perseverance os larga até ao momento de recolha, com o SFR. A deteção dos tubos será feita através da sua câmara. Esta tarefa de reconhecimento de tubos poderia ser feita por humanos. No entanto, sabe-se que as máquinas têm um erro menor que os humanos no que toca a object recognition. Portanto, para aumentar a probabilidade de sucesso desta missão, é necessário criar para este rover um algoritmo que o possibilite de fazer estas detections, tornando também a missão mais autónoma e rápida. (https://belmonteyecenter.com/is-machine-vision-surpassing-the-human-eye-for-accuracy/, https://venturebeat.com/ai/6-areas-where-artificial-neural-networks-outperform-humans/)
+
+
+
+
+https://arxiv.org/abs/2206.02622
+https://belmonteyecenter.com/is-machine-vision-surpassing-the-human-eye-for-accuracy/
+https://arstechnica.com/space/2023/06/the-mars-sample-return-mission-is-starting-to-give-nasa-sticker-shock/
+https://www.itv.com/news/anglia/2022-10-04/mars-rover-axed-from-nasa-mission-sets-sights-on-the-moon
+https://en.wikipedia.org/wiki/Artemis_program
+https://www.science.org/content/article/scrapping-original-plan-mars-mission-existing-rover-bring-samples-home
+https://www.esa.int/ESA_Multimedia/Images/2020/10/What_is_Sample_Fetch_Rover
+https://mashable.com/article/nasa-mars-rover-samples
+https://mars.nasa.gov/msr/#Concept
+
+https://www.denis-oakley.com/uber-business-model-canvas-success/
+https://towardsdatascience.com/image-data-analysis-using-python-edddfdf128f4
+
+https://paperswithcode.com/task/image-augmentation
+https://www.kaggle.com/code/bmarcos/image-recognition-gender-detection-inceptionv3
+https://paperswithcode.com/paper/make-one-shot-video-object-segmentation-1
+
+
+
+https://machinelearningmastery.com/how-to-manually-scale-image-pixel-data-for-deep-learning/
+
+Normalization will help our algorithm to train better. The reason we typically want normalized pixel values is because neural networks rely on gradient calculations. These networks are trying to learn how important or how weighty a certain pixel should be in determining the class of an image.
+
+https://blog.theos.ai/articles/how-many-images-do-i-need-for-my-computer-vision-model
+https://www.mygreatlearning.com/blog/feature-extraction-in-image-processing/
+https://www.tutorialspoint.com/how-to-normalize-an-image-in-opencv-python
+
+
+Portanto, a forma como o modelo funciona é basicamente a seguinte: cada pixel é dotado de numeros, que são processados devidamente antes de entrar no modelo. Como se trata de supervised learning, a bounding box vai dizer ao modelo "qnd encontrares estes números ou algo parecido, está aqui o objeto que procuras". Assim, ao usar as imagens de teste, vão ser processadas da mesma maneira que as de treino e, depois, os números associdados à imagem vão dizer ao modelo onde se encontra as tais "sequências" de números que mais provavelmente pertencem ao objeto que se tenta identificar. Daí as probabilidades associadas à bounding box, pois a maioria dos números poderão fazer alusão ao objeto mas nem todos, tendo a bounding box uma probabilidade associadas proxima de 1, mas não igual.
+
+---- in the Object Detection task, you need to predict a bounding box (Regression) and a class inside the bounding box (Classification)
+
+https://www.v7labs.com/blog/neural-networks-activation-functions
+
+
+Dropout meaning: The dropout layer is a layer used in the construction of neural networks to prevent overfitting. In this process, individual nodes are excluded in various training runs using a probability, as if they were not part of the network architecture at all.
+Adicionei estas layers no modelo para me dar um pouco mais de liberdade e conseguir manusear melhor o modelo
+
+Dense meaning: Dense Layer is simple layer of neurons in which each neuron receives input from all the neurons of previous layer, thus called as dense
+
+
+dei overfit no model, portanto diminui os epochs de 100 para 50 e a dense layer ficou menor
+deu overfit outra vez, portanto alterei os dropouts de 0.25 para 0.5
+
+
+
+def show_image_bbox(X_arr, bbox, new_img_path):
+
+  bbox__ = copy.deepcopy(bbox)
+  pil_img = tf.keras.utils.array_to_img(X_arr)
+  pil_img_tiny = pil_img
+
+  tf.keras.utils.save_img(new_img_path, pil_img_tiny)
+
+  bbox__[0] *= shape_after[1]
+  bbox__[1] *= shape_after[0]
+  bbox__[2] *= shape_after[1]
+  bbox__[3] *= shape_after[0]
+
+  start_point = (int(bbox__[0]), int(bbox__[1]))
+  end_point = (int(bbox__[2]), int(bbox__[3]))
+  color = (255,0,0)  # RGB, fica vermelho desta forma
+  thickness = 1
+
+  image = cv2.imread('./' + new_img_path)
+  image = cv2.rectangle(image, start_point, end_point, color, thickness)  # tem de se usar valores inteiros aqui
+  pil_img = tf.keras.utils.array_to_img(image)
+
+  return pil_img   # está a perder a normalização ???
+
+
+
+
+model = Sequential([
+
+    Conv2D(filters=16,kernel_size=(3,3),  input_shape = (224, 224, 3),activation='relu'),
+    MaxPooling2D(pool_size=(2,2)),
+
+    Conv2D(filters=32,kernel_size=(3,3), activation='relu'),
+    MaxPooling2D(pool_size=(2,2)),
+    Dropout(0.25),
+
+    Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+    MaxPooling2D(pool_size=(2,2)),
+    Dropout(0.25),
+
+    Flatten(),
+    Dense(100, activation='relu'),
+    Dropout(0.25),
+    Dense(4, activation='sigmoid')
+])
+
+
+def omit_images_without_tube(X_set, y_set):
+
+    X_train_transf = []
+    y_train_transf = []
+
+    for i, bbox in enumerate(y_set):
+
+        if len(bbox) != 0:
+          X_train_transf.append(X_set[i])
+          y_train_transf.append(bbox)
+
+    return X_train_transf, y_train_transf
+
+
+
+
+Coisas para perguntar ao miguel:
+- imagens em greyscale têm 3 dimensoes como se fossem RGB
+- como funciona exatamente uma bounding box (explicação la em cima ou...?)
+- centroide da bounding box é o centro do tubo
+- perguntar pq eq ele queria q fizessmos com naive bayes
+- não é necessário um image classifier para este trabalho? como é que implementariamos um image classifier num object detection
+- dar de input imagens que não contenham o tubo, como fazer com o y_train? o modelo é capaz de identificar a presença?
+
+
+
+Sites importantes se quiser melhorar o modelo:
+- L2 Loss: https://saturncloud.io/blog/regularization-with-l2-loss-in-tensorflow-how-to-apply-to-all-weights-not-just-the-last-one/
+- Vídeo Bounding Box Regression: https://www.youtube.com/watch?v=LZRfHkTNQqo
+- VGG model: https://viso.ai/deep-learning/vgg-very-deep-convolutional-networks/
+- Model bbox regr inteiro: https://pyimagesearch.com/2020/10/05/object-detection-bounding-box-regression-with-keras-tensorflow-and-deep-learning/
+- Data augmentation com albumentations.ai: https://albumentations.ai/docs/getting_started/bounding_boxes_augmentation/
+- Dividir cada imagem aos pedaços para construir o modelo: https://www.analyticsvidhya.com/blog/2018/06/understanding-building-object-detection-model-python/
+- como não temos valores negativos, faz sentido usar relu? penso que apenas se comporta como uma linear normal
+
+
+    img_normalized = cv2.normalize(img_arr, None, 0, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)  -> acho que este dtype éq está a estragar a normalização
+
+passar imagem para greyscale: img_arr = cv2.imread('./normalizedimage.png', cv2.IMREAD_GRAYSCALE)
+
+
+# read image and convert to RGB format
+image = cv2.imread('images/dog1.jpg')
+image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+
+
+
+y_train_empty = [[0, 0, 0, 0]] * 591
+y_train_empty = np.array(y_train_empty)
+X_train.shape, y_train_empty.shape
+
+
+
+#tf.keras.utils.save_img('normalizedimage.png', pil_img_tiny)  # aqui continua normalized
+#X_train[49]
+#img_arr = cv2.imread('./normalizedimage.png')
+#img_arr.shape
+
+
+autoencoders
+guardar informação sobre erros que cometemos
+segment anything
+https://openaccess.thecvf.com/content_CVPR_2019/papers/Rezatofighi_Generalized_Intersection_Over_Union_A_Metric_and_a_Loss_for_CVPR_2019_paper.pdf
+
+
+ver ratios, tamanho das imagens, usar yolo e outros modelos pretreinados para comparar por ex
+
+Coisas para fazer até domingo:
+- construir uma função de transformação de imagens com albumentations eficiente e que faça parte do X_train, y_train, X_val e y_val (basicamente ver se os erros se devem à falta de data)
+
+- alterar a imagem por ratios e não deixar quadrada, basicamente brincar com as shapes
+
+
+
+
+Coisas para perguntar ao miguel (20/08):
+- ao fazer model.fit e usar validation_data, o modelo aprende dessa data ou não?
+- vale a pena separar data preprocessing e model em dois ficheiros diferentes?
+- pq eq depois de usar load_weights aparece uma loss diferente daquela q foi guardada
+
+
+
+
+
+If your custom-trained YOLOv8 model is not detecting anything after a few epochs, there might be several reasons behind this. Here are some suggestions to improve your model's performance:
+
+Increase the dataset size: Try to gather more labeled data or use data augmentation techniques to increase the size of your dataset. A larger dataset can improve the model's ability to detect objects.
+
+Fine-tune a pre-trained model: Instead of training the model from scratch, you can start with a pre-trained YOLOv8 model and fine-tune it on your dataset. This approach allows the model to benefit from pre-existing knowledge and may result in faster convergence and better performance.
+
+Adjust learning rate and other hyperparameters: Experiment with different learning rates, batch sizes, and other hyperparameters to find a better combination that improves your model's performance.
+
+Increase the number of training epochs: Sometimes, a few epochs might not be enough for the model to learn the features of the dataset. Increase the number of epochs and monitor the performance on the validation dataset to prevent overfitting.
+
+Check annotation quality: Ensure that the annotations for your dataset are accurate and correctly formatted. Incorrect or mislabeled data can negatively impact the model's performance.
+
+Evaluate model performance: Make sure you are evaluating your model's performance using appropriate metrics like mean Average Precision (mAP). This will help you understand how well your model is performing on your dataset.
+
+Visualize intermediate results: Visualize the results at different stages of the training process to get an idea of what the model is learning. This can help you identify issues with the training process or dataset.
+
+Check the loss function: Make sure you are using an appropriate loss function for the task. In the case of YOLOv8, the loss function should be suitable for object detection.
+
+By carefully analyzing and addressing these aspects, you can improve the performance of your custom YOLOv8 model on your dataset.
+
+
+
+Since you are training a deep neural network, increasing the input image size will greatly increase the number of parameters and the memory usage during training. This may lead to out-of-memory (OOM) errors or slow down the training process. Contrarily, reducing the image size can cause the model to lose important object details, especially in cases where the objects are very small or distant. Here are some tips you can try to potentially train on larger image size with limited VRAM:
+
+Batch size: The batch size can impact the memory usage since bigger batches require more memory. Reduce batch size to help reduce the amount of memory used.
+
+Gradient accumulation: Instead of processing the full batch at once, the gradient accumulation approach divides the batch into smaller ones and passes them separately. This reduces memory usage and increases the effective batch size.
+
+Gradient checkpointing: Gradient checkpointing allows recomputing intermediate results during the backward pass. This can help to reduce memory usage and enable training with larger image sizes.
+
+Smaller models or architectures: Use smaller models or architectures like Tiny-YOLOv4, YOLOv4-tiny, or YOLOv3-tiny that require less memory but may compromise the detection accuracy.
+
+Mixed precision training: Mixed precision training is a technique that applies different precisions to different model components in order to reduce memory usage and speed up training.
+
+
+----------------------------------------------------
+DATA AUGMENTATION COMPLETA
+
+def transform_images(X_set, bbox_set, transform):
+
+    bbox_set = list(bbox_set)
+    X_transformed = []
+    bbox_transformed = []
+
+    for i in range(len(bbox_set)):
+
+        bbox_set[i] = list(bbox_set[i])
+        bbox_set[i].append('sample')
+
+    for i in range(X_set.shape[0]):
+
+        transformed = transform(image=X_set[i], bboxes=[bbox_set[i]])
+        transformed_image = transformed['image']
+        transformed_bbox = transformed['bboxes']
+
+        X_transformed.append(transformed_image)
+        bbox_transformed.append(transformed_bbox)
+
+    for i in range(len(bbox_transformed)):
+
+        if len(bbox_transformed[i]) != 0:
+          bbox_transformed[i] = list(bbox_transformed[i][0])
+          bbox_transformed[i].remove('sample')
+
+    # retirar as imagens onde o tubo não está presente
+
+    X_train_transf = []
+    y_train_transf = []
+
+    for i, bbox in enumerate(bbox_transformed):
+
+        if len(bbox) != 0:
+          X_train_transf.append(X_transformed[i])
+          y_train_transf.append(bbox)
+
+    return np.array(X_train_transf), np.array(y_train_transf)
+
+
+
+# efetuamos três transformações diferentes em todo o X_train e y_train
+# no final, fazemos concat dos novos elementos de X_train e y_train
+
+def apply_transformations_and_concat(X_set, y_set):
+
+    reshape_values = (X_set.shape[1], X_set.shape[2])
+
+    random.seed(40)
+    transform_1 = A.Compose([A.RandomCrop(width=200, height=200),
+                             A.augmentations.geometric.resize.Resize(
+                             height = reshape_values[0], width = reshape_values[1])
+			                       ],
+                             bbox_params=A.BboxParams(format='albumentations'))   #format='albumentations' usa valores normalizados
+
+
+    random.seed(41)
+    transform_2 = A.Compose([A.augmentations.transforms.GaussNoise(
+                             var_limit=(10.0, 50.0), mean=0, per_channel=True, p=1),
+
+
+                             ],
+                             bbox_params=A.BboxParams(format='albumentations'))
+
+    random.seed(42)
+    transform_3 = A.Compose([A.augmentations.transforms.ColorJitter(
+                             brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2, p=1),
+			                       A.augmentations.geometric.rotate.Rotate(
+                             limit=360, rotate_method='largest_box', crop_border=False, p=1)
+                             ],
+                             bbox_params=A.BboxParams(format='albumentations'))
+
+    transformed_X_set_1, transformed_y_set_1 = transform_images(X_set, y_set, transform_1)
+    transformed_X_set_2, transformed_y_set_2 = transform_images(X_set, y_set, transform_2)
+    transformed_X_set_3, transformed_y_set_3 = transform_images(X_set, y_set, transform_3)
+
+    # para conseguir este concat, é necessário terem todas as mesma shape que X_set
+
+    X_set_final = np.concatenate([X_set,
+                                  transformed_X_set_1,
+                                  transformed_X_set_2,
+                                  transformed_X_set_3,
+                                  ])
+
+    y_set_final = np.concatenate([y_set,
+                                  transformed_y_set_1,
+                                  transformed_y_set_2,
+                                  transformed_y_set_3,
+                                  ])
+
+    return X_set_final, y_set_final
+
+
+X_train_final, y_train_final = apply_transformations_and_concat(X_train, y_train)
+X_val_final, y_val_final = apply_transformations_and_concat(X_val, y_val)
+
+print(X_train_final.shape, y_train_final.shape)
+print(X_val_final.shape, y_val_final.shape)
+
+
+----------------------------------------
+
+
+plt.imshow(X_train_real[0], cmap='gray) 
+plt.show() 
+
+
+
+-----------------------------
+
+# using gradio would be like:
+
+
+
+import gradio as gr
+
+model = Sequential([
+	Conv2D(filters=16, ...)
+	...
+	...
+	Dense(4, activation='sigmoid')
+	])
+model.compile(optimizer = Adam,
+	      loss=mse,
+	      metrics=['accuracy'])
+model.load__weights(path_checkpoint)
+
+def tube_detection(image):
+    
+    ...
+    (preprocessing image)
+    ...
+    
+    y_pred = model.predict(image)
+    image_with_bbox = show_image_bbox(image, y_pred, 'image.png')
+
+    return image_with_bbox
+
+demo = gr.Interface(fn=tube_detection, inputs='image', outputs='image')
+demo.launch() 
+
+
+--------   
+
+def choose_transformation(X_set, y_set, transformation):
+
+    if transformation == 'transform_1':
+
+      reshape_values = (X_set.shape[1], X_set.shape[2])
+
+      random.seed(40)
+      transform_1 = A.Compose([#A.augmentations.geometric.transforms.Affine(scale=1.5, p=1)
+                               A.RandomCrop(width=192, height=144),
+                               A.augmentations.geometric.resize.Resize(
+                               height = reshape_values[0], width = reshape_values[1])
+			                         ],
+                               bbox_params=A.BboxParams(format='yolo'))   #format='albumentations' usa valores normalizados
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_1)
+
+
+    elif transformation == 'transform_2':
+
+      random.seed(41)
+      transform_2 = A.Compose([A.augmentations.transforms.GaussNoise(
+                               var_limit=0.05, mean=0.3, per_channel=True, p=1),
+                               ],
+                               bbox_params=A.BboxParams(format='yolo'))
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_2)
+
+
+    elif transformation == 'transform_3':
+
+      random.seed(42)
+      transform_3 = A.Compose([#A.augmentations.transforms.ColorJitter(
+                               #brightness=(0.15,0.2), contrast=(0.15,0.2), saturation=(0.15,0.2), hue=(0.15,0.2), p=1),
+                               A.augmentations.geometric.transforms.Affine(scale=1.5, p=1),
+			                         A.augmentations.geometric.rotate.Rotate(
+                               limit=360, rotate_method='largest_box', crop_border=False, p=1)
+                               ],
+                               bbox_params=A.BboxParams(format='yolo'))
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_3)
+
+
+    else:
+
+      X_set_final = X_set
+      y_set_final = y_set
+
+
+    return X_set_final, y_set_final
+
+#X_train_final, y_train_final = choose_transformation(X_train, y_train, 'transform_2')
+X_val_final, y_val_final = choose_transformation(X_val, y_val, 'transform_1')
+
+#print(X_train_final.shape, y_train_final.shape)
+print(X_val_final.shape, y_val_final.shape)
+
+
+
+
+---------
+
+# por alguma razão as imagens deixam de estar normalizadas quando saem do preprocessing,
+# portanto é necessário normalizar os pixeis de novo
+
+def normalize_X_set(X_set):
+
+  X_final = []
+
+  for img_arr in X_set:
+      img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+      X_final.append(img_normalized)
+
+  return np.array(X_final)
+
+X_train = normalize_X_set(X_train_initial)
+X_val = normalize_X_set(X_val_initial)
+
+
+-------
+
+# acessar às imagens e bboxes guardadas na drive, criadas a partir de outro código
+
+def create_X_set_normalized(X_type):
+
+    X_set = []
+
+    root = './organized_data_gray/' + X_type + '/X_' + X_type + '_images'
+    files = os.listdir(root)
+    length = len(files)
+
+    if X_type == 'train':
+      interval = range(interval_train[0], interval_train[1])
+
+    else:
+      interval = range(interval_val[0], interval_val[1])
+
+    for i in interval:
+      path = root + '/processed_' + X_type + 'image_' + str(i) + '.png'   # se calhar é melhor usar os.path.dir nestas situações e outras
+      arr3 = cv2.imread(path)
+      img_arr, _, _ = cv2.split(arr3)
+      img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)   # é preciso normalizar de novo
+      
+      X_set.append(img_normalized)
+
+    return np.array(X_set)
+
+------
+
+def interval_train_and_val(train_number):
+
+    if train_number == 0:
+      interval_train = [0, 591]
+      interval_val = [0, 66]
+
+    elif train_number == 1:
+      interval_train = [591, 1050]
+      interval_val = [66, 116]
+
+    elif train_number == 2:
+      interval_train = [1050, 1508]
+      interval_val = [116, 166]
+
+    elif train_number == 3:
+      interval_train = [1508, 1966]
+      interval_val = [166, 216]
+
+    elif train_number == 4:   # apenas para ver os resultados que o val tem no modelo completamente treinado
+      interval_train = [0, 1]
+      interval_val = [0, 216]
+
+    else:
+      interval_train = [0, 1966]
+      interval_val = [0, 216]
+
+    return interval_train, interval_val, train_number
+
+# --- alterar aqui ---
+interval_train, interval_val, train_number = interval_train_and_val(5)
+
+
+-------
+
+# prediction para uma única imagem
+
+X_expand = np.expand_dims(X_val[0], axis=0)
+X_expand.shape
+model.predict(X_expand)
+
+
+-------
+
+https://medium.com/nerd-for-tech/building-an-object-detector-in-tensorflow-using-bounding-box-regression-2bc13992973f
+
+image tiling: https://binginagesh.medium.com/small-object-detection-an-image-tiling-based-approach-bce572d890ca
+
+
+------
+
+37 milhoes de parametros com 25 de batch size excede a RAM
+
+
+
+----------
+
+
+# efetuamos três transformações diferentes em todo o X_train e y_train
+# no final, fazemos concat dos novos elementos de X_train e y_train
+
+def apply_transformations_and_concat(X_set, y_set):
+
+    reshape_values = (X_set.shape[1], X_set.shape[2])
+
+    random.seed(40)
+    transform_1 = A.Compose([A.RandomCrop(width=192, height=144),
+                             A.augmentations.geometric.resize.Resize(
+                             height = reshape_values[0], width = reshape_values[1])
+			                       ],
+                             bbox_params=A.BboxParams(format='yolo'))
+
+
+    random.seed(41)
+    transform_2 = A.Compose([A.augmentations.transforms.GaussNoise(
+                             var_limit=0.05, mean=0.3, per_channel=True, p=1),
+                             ],
+                             bbox_params=A.BboxParams(format='yolo'))
+
+    random.seed(42)
+    transform_3 = A.Compose([A.augmentations.geometric.transforms.Affine(scale=1.5, p=1),
+			                       A.augmentations.geometric.rotate.Rotate(
+                             limit=360, rotate_method='largest_box', crop_border=False, p=1)
+                             ],
+                             bbox_params=A.BboxParams(format='yolo'))
+
+    transformed_X_set_1, transformed_y_set_1 = transform_images(X_set, y_set, transform_1)
+    transformed_X_set_2, transformed_y_set_2 = transform_images(X_set, y_set, transform_2)
+    transformed_X_set_3, transformed_y_set_3 = transform_images(X_set, y_set, transform_3)
+
+
+  
+
+    # para conseguir este concat, é necessário terem todas as mesma shape que X_set
+
+    X_set_final1 = np.concatenate([X_set,
+                                  transformed_X_set_1,
+                                  transformed_X_set_2
+                                  ,
+                                  transformed_X_set_3,
+                                  ])
+
+    y_set_final1 = np.concatenate([y_set,
+                                  transformed_y_set_1,
+                                  transformed_y_set_2
+                                  ,
+                                  transformed_y_set_3,
+                                  ])
+    
+
+    
+    # aplicar random crop a todas as transformações feitas
+
+    transform_4 = A.Compose([A.RandomCrop(width=192, height=144),
+                             A.augmentations.geometric.resize.Resize(
+                             height = reshape_values[0], width = reshape_values[1])
+			                       ],
+                             bbox_params=A.BboxParams(format='yolo'))
+    
+    transformed_X_set_final1, transformed_y_set_final1 = transform_images([
+    X_set_final1, y_set_final1, transform_4
+    ])
+
+
+    X_set_final2 = np.concatenate([X_set_final1,
+                                   transformed_X_set_final1])
+    
+    y_set_final2 = np.concatenate([y_set_final1,
+                                   transformed_y_set_final1])
+
+    return X_set_final2, y_set_final2
+
+
+
+-------
+
+
+
+def choose_transformation(X_set, y_set, transformation):
+
+    if transformation == 'transform_1':
+
+      reshape_values = (X_set.shape[1], X_set.shape[2])
+
+      random.seed(42)
+      transform_1 = A.Compose([A.augmentations.geometric.transforms.Affine(scale=1.5, p=1),
+                               A.RandomCrop(width=192, height=144),
+                               A.augmentations.geometric.resize.Resize(
+                               height = reshape_values[0], width = reshape_values[1])
+			                         ],
+                               bbox_params=A.BboxParams(format='yolo'))   #format='albumentations' usa valores normalizados
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_1)
+
+
+    elif transformation == 'transform_2':
+
+      random.seed(41)
+      transform_2 = A.Compose([A.augmentations.transforms.GaussNoise(
+                               var_limit=0.02, mean=0.2, p=1),
+                               #A.augmentations.geometric.transforms.Affine(scale=2.0, p=1),
+                               #A.augmentations.transforms.InvertImg(p=1)
+                               ],
+                               bbox_params=A.BboxParams(format='yolo'))
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_2)
+
+
+    elif transformation == 'transform_3':
+
+      random.seed(39)
+      transform_3 = A.Compose([#A.augmentations.transforms.ColorJitter(
+                               #brightness=(0.15,0.2), contrast=(0.15,0.2), saturation=(0.15,0.2), hue=(0.15,0.2), p=1),
+                               A.augmentations.transforms.Emboss(alpha=(0.7,1), strength=(0.7,1), p=1),
+                               #A.augmentations.geometric.transforms.Affine(scale=1.5, p=1)
+			                         #A.augmentations.geometric.rotate.Rotate(
+                               #limit=360, rotate_method='largest_box', crop_border=False, p=1)
+                               ],
+                               bbox_params=A.BboxParams(format='yolo'))
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_3)
+
+    elif transformation == 'transform_4':
+
+      random.seed(41)
+      transform_4 = A.Compose([#A.augmentations.transforms.GaussNoise(var_limit=0.02, mean=0.2, p=1),
+                               A.augmentations.transforms.Emboss(alpha=(0.7,1), strength=(0.7,1), p=1),
+                               #A.augmentations.transforms.Solarize(threshold=0.4, p=1),
+                               A.augmentations.transforms.MultiplicativeNoise(multiplier=(1, 2), elementwise=False, p=1),
+                               #A.augmentations.geometric.transforms.Affine(scale=2.0, p=1)
+                               #A.augmentations.transforms.Superpixels(p_replace=0.1, n_segments=100, max_size=500, p=1)
+                               ],
+                               bbox_params=A.BboxParams(format='yolo'))
+
+      X_set_final, y_set_final = transform_images(X_set, y_set, transform_4)
+
+
+    else:
+
+      X_set_final = X_set
+      y_set_final = y_set
+
+
+    return X_set_final, y_set_final
+
+X_train_final, y_train_final = choose_transformation(X_train, y_train, 'transform_4')
+X_val_final, y_val_final = choose_transformation(X_val, y_val, 'transform_4')
+
+print(X_train_final.shape, y_train_final.shape)
+print(X_val_final.shape, y_val_final.shape)
+
+
+--------------------------------
+
+def tube_detection(image):
+    
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    img_arr = cv2.resize(gray,(512,384))  # alterar aqui os valores da shape em função do ratio
+    img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    
+    img_expand = np.expand_dims(img_normalized, axis=0)
+    y_pred = model.predict(img_expand)[0]
+    image_with_bbox = show_image_bbox(img_normalized, y_pred, 'image.png')
+
+    return image_with_bbox
+
+demo = gr.Interface(fn=tube_detection, inputs='image', outputs='image')
+demo.launch() 
+
+------------------------------
+
+albumentations: Blur(p=0.01, blur_limit=(3, 7)), MedianBlur(p=0.01, blur_limit=(3, 7)), ToGray(p=0.01), CLAHE(p=0.01, clip_limit=(1, 4.0), tile_grid_size=(8, 8))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------
+
+https://paperswithcode.com/task/object-detection
+
+-------------------------------
+
+hugging face app.py
+
+import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout
+from keras.models import Sequential
+import cv2
+import numpy as np
+import gradio as gr
+
+model = Sequential([
+
+Conv2D(filters=16,kernel_size=(3,3), padding='same', input_shape = (512, 384, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), padding='same', activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Conv2D(filters=64,kernel_size=(3,3), padding='same', activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+])
+
+#model.compile(optimizer=Adam(learning_rate=0.001),              # será que é preciso o compile aqui?
+ #             loss=tf.keras.losses.MeanSquaredError(),
+  #            metrics=['accuracy'])
+
+model.load_weights('./mars-sample-localization/grayCkpt1_18_0.00663_.h5')                                       # alterar aqui o file
+
+def sample_detection(image):
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    img_arr = cv2.resize(gray,(512,384))  
+    img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    img_expand = np.expand_dims(img_normalized, axis=0)
+    y_pred = model.predict(img_expand)[0]
+    image_with_bbox = show_image_bbox(img_normalized, y_pred, 'image.png')
+
+    return image_with_bbox
+
+demo = gr.Interface(fn=sample_detection, inputs='image', outputs='image')
+demo.launch()
+
+
+
+
+----------------------------------
+
+# acessar às imagens e bboxes guardadas na drive, criadas a partir de outro código
+
+def create_X_set_normalized(X_type, number_of_testimages):
+
+    X_set = []
+    root = './organized_data_gray/' + X_type + '/X_' + X_type + '_images'
+    length = number_of_images(X_type)
+
+    if X_type == 'test':
+      total_length = number_of_images(X_type)
+      length = number_of_testimages
+      #random_images = []
+
+          
+    for i in range(0, length):
+
+      if X_type == 'test'
+        random_num = random.choice(list(range(0, total_length)))
+      path = root + '/processed_' + X_type + 'image_' + str(i) + '.png'   # se calhar é melhor usar os.path.dir nestas situações e outras
+      arr3 = cv2.imread(path)
+      img_arr, _, _ = cv2.split(arr3)
+      img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)   # é preciso normalizar de novo
+
+      X_set.append(img_normalized)
+
+    return np.array(X_set)
+
+
+-------------------------------------
+
+vou tirar a normalização desta função no primeiro ficheiro, no ficheiro do modelo faz se a normalização
+
+def img_to_array_modified(vector):
+
+  X = []
+
+  for img_path in vector:
+
+      img_arr = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)   # lê em grayscale qualquer imagem
+      img_arr = cv2.resize(img_arr,(512,384))  # alterar aqui os valores da shape em função do ratio
+      #img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+      #X.append(img_normalized)
+      X.append(img_arr)
+
+  return np.array(X)
+
+----------------------------------
+
+X_train_final, y_train_final = transformations_and_concat(X_train, y_train)
+X_val_final, y_val_final = X_val, y_val
+
+
+X_train_erased_final = erased_sample_transformations_and_concat(X_train_erased_sample, 
+                                                                y_train_erased_sample)
+y_train_erased_final = np.array(y_train_null)
+X_val_erased_final, y_val_erased_final = X_val_erased_sample, y_val_erased_sample
+
+
+
+-------------------------------------
+
+y_pred_detection = model_detection.predict(X_val)
+
+y_pred[y_pred >= 0.5] = 1
+y_pred[y_pred < 0.5] = 0
+
+X_val_ones = []
+for i, prediction in enumerate(y_pred_detection):
+  if prediction == 1:
+    X_val_ones.append(X_val[i])
+
+y_pred_regression = model_regression.predict(X_val_ones)
+
+
+-------------------------------------------
+
+
+index = 1700
+try:
+  show_image_bbox(X_train_final[index], y_train_final[index], 'transformed_image.png')
+except ValueError:
+  print('\n \n \n The sample is not in the image \n \n \n')
+
+show_image_bbox(X_train_final[index], y_train_final[index], 'transformed_image.png')
+
+
+-------------------------------------
+
+X_train_detection.shape, y_train_detection.shape,
+      X_val_detection.shape, y_val_detection.shape
+
+X_train_regression.shape, y_train_regression.shape,
+      X_val_regression.shape, y_val_regression.shape
+
+
+-------------------------------------
+
+model_regression = Sequential([
+
+Conv2D(filters=16,kernel_size=(3,3), input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),  
+
+Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),  
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+])
+
+
+---------------------------------------
+
+
+"""app.py"""
+
+import tensorflow as tf
+from tensorflow import keras
+from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout
+from keras.models import Sequential
+import cv2
+import numpy as np
+import gradio as gr
+import copy
+
+
+model_regression = Sequential([
+
+Conv2D(filters=16,kernel_size=(3,3), input_shape = (384, 512, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),   # tentar sem os dropouts
+
+Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),   # tentar com 4096
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+])
+
+
+model_detection = Sequential([
+
+    Conv2D(filters=64, kernel_size=(3,3), input_shape=(height, width, 1), activation='relu'),
+    MaxPooling2D(pool_size=(2,2), strides=(2, 2), padding="valid"),
+    Dropout(0.1),
+
+    Conv2D(filters=32, kernel_size=(3,3), activation='relu'),
+    MaxPooling2D(pool_size=(2,2), strides=(2, 2), padding="valid"),
+    Dropout(0.1),
+
+    Conv2D(filters=16, kernel_size=(3,3), activation='relu'),
+    MaxPooling2D(pool_size=(2,2), strides=(2, 2), padding="valid"),
+    Dropout(0.1),
+
+    Flatten(),
+    Dense(128, activation='relu'),
+    #Dropout(0.1),
+
+    Dense(2, activation='softmax')
+])
+
+model_regression.load_weights('./callbacks/checkpoints/grayCkpt1_18_0.00663_.h5')                                       # alterar aqui o file
+model_detection.load_weights('./callbacks/checkpoints/grayCkpt1_01_0.99275_.h5')
+
+
+
+def show_image_bbox(X_arr, y_arr, confidence, new_img_path):
+
+  y_arr_albu = [0,0,0,0]
+
+  y_arr_albu[0] = y_arr[0] - y_arr[2] / 2
+  y_arr_albu[1] = y_arr[1] - y_arr[3] / 2
+  y_arr_albu[2] = y_arr[2] + y_arr_albu[0]
+  y_arr_albu[3] = y_arr[3] + y_arr_albu[1]
+
+  # os valores da bbox têm de entrar normalizados
+  shape_after = X_arr.shape
+
+  X_arr = cv2.merge([X_arr, X_arr, X_arr])   # para conseguir visualizar uma imagem a cinzento
+
+  bbox_ = copy.deepcopy(y_arr_albu)
+  pil_img = tf.keras.utils.array_to_img(X_arr)  # esta função tira a normalização do array (não tem muito problema dado que esta função é apenas para demonstração, no modelo entram os valores normalizados)
+
+  tf.keras.utils.save_img(new_img_path, pil_img)
+
+  if len(bbox_) != 0:
+    bbox_[0] *= shape_after[1]
+    bbox_[1] *= shape_after[0]
+    bbox_[2] *= shape_after[1]
+    bbox_[3] *= shape_after[0]
+
+    start_point = (int(bbox_[0]), int(bbox_[1]))
+    end_point = (int(bbox_[2]), int(bbox_[3]))
+
+  color = (255,0,0)  # RGB, fica vermelho desta forma
+  thickness = 1
+
+  image = cv2.imread('./' + new_img_path)
+
+  if len(bbox_) != 0:
+    image = cv2.rectangle(image, start_point, end_point, color, thickness)  # tem de se usar valores inteiros aqui
+    image = cv2.putText(image, 'sample' + str(confidence), (int(bbox_[0]), int(bbox_[1] - 3)), 0, 0.3, (255,0,0), 1)
+
+  final_img = tf.keras.utils.array_to_img(image)
+
+  return final_img
+
+
+
+def sample_detection(image):
+
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    img_arr = cv2.resize(gray,(512,384))  # alterar aqui os valores da shape em função do ratio
+    img_normalized = cv2.normalize(img_arr, None, -1, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+    img_expand = np.expand_dims(img_normalized, axis=0)
+    y_pred_detection = model_detection.predict(img_expand)[0]
+
+    if y_pred_detection[1] >= 0.5:
+
+      confidence = round(y_pred_detection[1], 2)
+      y_pred_regression = model_regression.predict(img_expand)[0]
+      image_with_bbox = show_image_bbox(img_normalized, y_pred_regression, confidence, 'image.png')
+
+      return image_with_bbox, 'There is a sample in this image'
+
+    else:
+
+      image = './360_F_421058012_TsV76QVuJhignu12Ei9VHpeWDWjHmeA6.jpg'
+      return image, 'There is no sample in this image'
+
+
+demo = gr.Interface(fn=sample_detection, inputs='image', outputs=['image', 'text'])
+demo.launch(debug=True)
+
+
+-----------------------------
+
+
+
+def precision_recall_f1(conf_threshold, iou_threshold):
+
+    y_pred_01 = []
+    for i, y in enumerate(y_pred_detection):
+
+        confidence = round(y[1], 3)
+
+        if confidence >= conf_threshold:
+          y_pred_01.append(1)
+
+        else:
+          y_pred_01.append(0)
+
+    cm = metrics.confusion_matrix(y_test_01, y_pred_01)
+    TN, FP, FN, TP = cm.ravel()
+
+    precision = TP / (TP + FP)
+    recall = TP / (TP + FN)
+    f1_score = TP / (TP + 0.5 * (FP + FN))
+
+    lst = [conf_threshold, precision, recall, f1_score]
+    return lst
+
+
+-------------------------------
+
+
+def precision_recall_f1(conf_threshold, iou_threshold):
+
+    y_pred_01 = []
+    indexes_positives = []
+
+    for i, y in enumerate(y_pred_detection):
+
+        confidence = round(y[1], 3)
+
+        if confidence >= conf_threshold:
+          y_pred_01.append(1)
+          indexes_positives.append(i)
+
+        else:
+          y_pred_01.append(0)
+
+    y_pred_01_new = copy.deepcopy(y_pred_01)
+
+    for index in indexes_positives:
+
+        if intersection_over_union(y_pred_regression[index], y_test_regression[index]) < iou_threshold:
+          y_pred_01_new[index] = 0  
+
+
+    cm = metrics.confusion_matrix(y_test_01, y_pred_01_new)
+    TN, FP, FN, TP = cm.ravel()
+
+    precision = TP / (TP + FP)
+    recall = TP / (TP + FN)
+    f1_score = TP / (TP + 0.5 * (FP + FN))
+
+    lst = [iou_threshold, conf_threshold, precision, recall, f1_score]
+    #lst = [TN, FP, FN, TP, len(indexes_positives)]
+    return lst, cm

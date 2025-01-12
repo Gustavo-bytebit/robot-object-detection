@@ -1,0 +1,121 @@
+resultados de validação vao ser usados p explicar certas escolhas de parametros (project_notas)
+
+
+
+Results:
+
+To evaluate our final model, we needed a dataset that was not seen by the models or had any influence in the hyperparameters search like the validation sets did.
+For that, we used the entire 'field_test_images' folder of the dataset, which had 2884 unseen images. From those 2884 images, 2060 had the sample and the rest did not have the sample in them.
+
+To have a clear understanding of the predictions the model made with the test images and make a good comparison with the results we got from YOLOv8, we needed certain specific metrics that are usually used to evaluate object detection models (and are the ones YOLO also uses): Intersection over Union (IoU), Confusion Matrix, which then gives us Precision, Recall, F1-score and Average Precision (AP).
+
+IoU is a metric that focuses on how much area the ground truth bounding box and the predicted bounding box share with each other. Mathematically, it is given by the intersection of the bounding boxes' areas divided by the union of their areas, which means the values of this metric are limited by 0 and 1, with 0 meaning no intersection (considering as well the cases were there are not ground truth boxes because there is no sample in the image) and 1 meaning full intersection (the boxes have the same dimensions and match perfectly on top of one another).
+
+The Confusion Matrix, because we are discussing a single-class object detection, is much simpler then when it is a multi-class problem. It can give us 4 different variables on how our model classified and labeled the test data. In this case, the two labels were "Sample" and "No Sample" which means, respectively, "the sample is in this image" and "the sample is not in this image". True Positives (TP) is when the true label is "Sample" and the prediction was "Sample"; True Negatives (TN) shows us the number of times we predicted "No Sample" and there was not a sample in the image; False Positives (FP) gives us how many times the model predicted "Sample" and it was actually "No Sample"; False Negatives (FN) is when the true label is "Sample" and the predicted label was "No Sample".
+
+From the Confusion Matrix and its variables, we can calculate the Prediction. Prediction focuses directly on all the labels we considered "Sample", whether they were TP or FP. It indicates how much we should trust our model to catch true positives in between all the images we considered to have the sample. Mathematically, it is calculated with the following equation: "TP / (TP + FP)"
+
+We also can figure out the Recall from the Confusion Matrix. Its mathematical equation is "TP / (TP + FN)" and it portraits us how well is the model catching all the images with the sample in it.
+
+Then we have the F1-score, which is a metric that comes from the need for those who want to find the best balance between false negatives and false positives (precision and recall) in their model. As expected, its equation is influenced by false positives and false negatives: "TP / (TP + 0.5(FP + FN))"
+
+Finally, we have the Average Precision metric. This one is the numerical value of the area under the Precision-Recall curve, where each point of the graph is given by the different thresholds we set for the confidence of the detection model (11, evenly spaced by 0.1, from 0 to 1). For example, given a confidence threshold of 0.3, every prediction of the detection model that predicted the label as "Sample" with a confidence lower than 0.3 were not considered. Every prediction above this threshold was considered as a positive label (the sample is in the image). Since we are dealing with a single-class object detection problem, there is no need to use the usual Mean Average Precision (mAP) that YOLO also brings up in its graphics. The mAP is basically just the mean of every class' AP.
+
+Below there is a graph for each of the four latest mentioned metrics. Each of the graphics has five different lines, with each one of them for a different IoU threshold (represented bby the @). The IoU threshold has the same logic that the confidence threshold of the detection model has: for values of IoU below the given threshold, those imagens in question will be labeled as "No Sample" (negatives). Once we saw the results were not changing much after the 0.1 threshold for the IoU, we only got data from 0, up until the 0.5 threshold (six different thresholds).
+
+
+
+
+Besides the YOLO, we also tried to train our model with the sound column dataset for further comparison and maybe improvement of our own model. However, the model just failed to learn from this dataset and it would stagnate the loss and accuracy right after the first epoch. Once we could not change the architecture of the model to make it learn (because we would lose the common ground of comparison), we were not able to get any results from that dataset.
+
+
+
+
+
+To have a global understandment on how the regression model was learning, we created a function called "iou_info" that would give us useful information about how well the predicted boxes were corresponding to the ground truth bounding boxes. The outputs of our model on this metric are as follows:  
+
+
+
+
+#Taking the results we got into consideration and our problem statemet, which is the development of a low-cost object detection algorithm, we can understand (comparing #once again with the results we got from YOLO) that our model has a lot to improve on drawing the bounding boxes correctly around the sample.
+
+ As soon as we use a IoU threshold (which the first threshold is 0.1), the average precision values drop from 0.28575 to 0.00822, which is pratically a 97% drop from the initial value. If we do not consider the regression part of the model (i.e, IoU threshold at 0), we can say it is behaving in a good way, with the precision not dropping below 0.7 and the recall being in the limit of 0.6 at a confidence threshold of 1. We can still get some good intersections like the ones represented in figure b) and c), but others like d) seem to appear quite often. We also understood that, even though it had problems locating the sample, it learned better the dimensions of the bounding box itself. 
+
+Discussions:
+
+The results we obtained, considering the problem statement (which is developing an all-around low-cost object detection model), are very plausible, since the models are basically three CNN's each one, with its main differences being in the hyperparameters used for their layers. They both have a basic layout for a deep neural network, which is widely used for many other problems that are not only related to object detection. 
+
+
+
+
+-----------------------
+
+
+
+If we compare our results to YOLO's, we can easily understand that YOLO showed better results by looking directly to the average precision: with a threshold of 0.5 for the IoU, YOLO got an average precision of 0.796; on the other hand, for the same threshold, our model got 0.00003 for the average precision. Even without threshold., our model still got 0.28575 for this metric. With these results, it shows that the regression model is failing a lot of times, even though the detection model is making some good predictions.
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+PowerPoint presentation
+
+Now we have the evaluation of our final model and its results.
+For us to fully understand if the results were any good, we needed to compare with the results we got from YOLO, which meant we needed to use the same metrics as YOLO. (primeiro slide)
+We are only going to explain the metrics you probably haven't heard before, as we do not have much time in our presentation. If you have any doubts, we can explain them after the presentaiton.
+
+First, we have Intersection over Union (IoU). This metric is mathematically given by this equation, which is given by the Jaccard index, giving values between 0 and 1, with 0 meaning no intersection and 1 meaning a full intersection.
+
+The Confusion Matrix can give us values for 4 different variables that tells us how our model labeled the data, with the two possible labels being "Sample" and "No sample".Those 4 variables are TP, FP, TN and FN.
+
+From the confusion matrix, we can get all of the following metrics:
+- Precision, with this formula, indicates how much we should trust the model to catch samples in between all the images it considered to have the sample
+- Recall, given by this formula, portrays how well is the model catching all the images with the sample
+- F1-score, given by these formulas (which are equivalent), comes from the need for those who want to find the best balance between precision and recall
+- Average precision is the numerical value of the area under the precision by recall curve and this was the equation we used for its calculation
+
+We made a graph for each of these metrics in relation to the confidence threshold of the detection model. Also, each one of the graphs has 6 lines representing the different IoU thresholds applied
+
+
+- Looking at the precision-confidence curve, the precision is increasing in both graphs, even though YOLO's has a different shape in this graph and the next ones. What is actually happening is that the number of FP and TP are both decreasing, but the FP decrease faster.
+- Looking at the recall-confidence curve, the recall is decreasing in both graphs. What is actually happening is the increase of the number of FN is greater than the decrease of the number of TP.
+- For the F1-confidence curves, the best balance between precision and recall for our model is with the confidence threshold at 0 and for YOLO is at around 0.25
+
+
+
+However, the best way to compare results is with the AP: with a threshold of 0.5 for the IoU, YOLO got an average precision of 0.796. For the same threshold, our model got 0.00003. Comparing to not using a threshold and using a threshold of 0.1, the AP drops about 97%, from 0.28572 to 0.00822. This comes to show how much the regression model is failing, even though the detection model can make some good predictions.
+These images were actually selected randomly believe it or not, showing some good predictions. However, images like this one are constantly appearing.
+These images are from YOLO's predictions, not missing a single one of the 16 represented
+
+The results obtained were disappointing, but plausible, since each model consists of a 3-layer CNN, which is a basic layout for an object detection model. We should have taken the research of building a model from scratch even further, always taking into account how limited our resources were, because that is the point of our work. 
+
+Another explanation could be the fact that the method we used to remove the sample from the images left some blur on where the sample was in. Also, there were way more synthetic images than real ones (1:11 proportion). This synthetic images had imperfections such as lack of shading or way too small samples, to the point where we could not recogonize them. This became worse with the images' resize and changing them to grayscale. In this image we are basically playing "Where's Wally" because of how difficult it is to spot the sample. And there is Wally, yey!
+
+To end our presentation, if there is time, we would like to show you an interface we built for our model. Nonetheless, it is posted up on a public space in Hugging Face, so you can have fun feeding it images.
+
+-----------------
+
+bibliografia: 
+
+1º:
+https://pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+https://www.oreilly.com/library/view/opencv-4-with/9781789801811/5ec9faa8-1670-4ef0-9fc9-bbdcf2e803d0.xhtml
+
+2º:
+https://towardsdatascience.com/understanding-the-roc-curve-and-auc-dd4f9a192ecb
+
+3º:
+https://www.nomidl.com/machine-learning/what-is-precision-recall-accuracy-and-f1-score/
+
+4º:
+https://towardsdatascience.com/choosing-performance-metrics-61b40819eae1
+
+5º:
+https://www.stateoftheart.ai/concepts/a468a5b3-605a-4010-a8c5-2337b5275e43
+https://towardsdatascience.com/what-is-average-precision-in-object-detection-localization-algorithms-and-how-to-calculate-it-3f330efe697b
+
+6º:
+https://hasty.ai/docs/mp-wiki/metrics/average-precision
+
+13º:
+https://www.golfdigest.com/story/no-this-isnt-an-april-fools-prank-its-actually-wheres-waldo-week-on-google-maps

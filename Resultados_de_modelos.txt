@@ -1,0 +1,633 @@
+1º modelo:
+
+ - X_train.shape = (1966, 384, 512) 
+
+ - len(X_val) = 216
+
+ - Transformações (3):  random.seed(40)
+		     	transform_1 = A.Compose([A.RandomCrop(width=192, height=144),
+                             			A.augmentations.geometric.resize.Resize(
+                             			height = reshape_values[0], width = reshape_values[1])
+			                        ],
+                             			bbox_params=A.BboxParams(format='yolo'))
+
+			random.seed(41)
+    			transform_2 = A.Compose([A.augmentations.transforms.GaussNoise(
+                             			var_limit=0.05, mean=0.3, per_channel=True, p=1),
+                             			],
+                             			bbox_params=A.BboxParams(format='yolo'))
+
+   			random.seed(42)
+    			transform_3 = A.Compose([A.augmentations.geometric.transforms.Affine(scale=1.5, p=1),
+			                        A.augmentations.geometric.rotate.Rotate(
+                            			limit=360, rotate_method='largest_box', crop_border=False, p=1)
+                            			],
+                             			bbox_params=A.BboxParams(format='yolo'))
+
+ - Layers e compile:
+
+Conv2D(filters=16,kernel_size=(3,3),  input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+
+model.compile(optimizer=Adam(learning_rate=0.001),
+              loss=tf.keras.losses.MeanSquaredError(),
+              metrics=['accuracy'])
+
+ - Epochs = 20
+
+ - batch_size = 25
+
+ --- RESULTADOS ---:  	- for y_val and y_pred:
+ 				mean % of the area intersected in all intersections: 3.86136414828693 
+ 				number of intersections: 10 
+ 				percentage of intersections: 4.62962962962963 
+
+			- for y_train and y_pred_train:
+ 				mean % of the area intersected in all intersections: 12.662593055811575 
+				number of intersections: 1038 
+				percentage of intersections: 52.79755849440488
+
+--------------------------------------------------------------------------------------------------------
+
+2º modelo:
+
+"tudo igual ao anterior exceto": Epochs = 10
+
+ --- RESULTADOS ---:  	- for y_val and y_pred:
+ 				mean % of the area intersected in all intersections: 2.68676525 
+ 				number of intersections: 27 
+ 				percentage of intersections: 12.5 
+
+			- for y_train and y_pred_train:
+ 				mean % of the area intersected in all intersections: 4.12463391 
+				number of intersections: 568 
+				percentage of intersections: 28.891
+
+-------------------------------------------------------------------------------------------------------
+
+3º modelo (Mars_Model2_gray a correr às 15h):
+
+"tudo igual ao 2º exceto": 
+
+Conv2D(filters=16,kernel_size=(3,3), padding='same', input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), padding='same', activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Conv2D(filters=64,kernel_size=(3,3), padding='same', activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(128, activation='relu'),
+Dense(64, activation='relu'),
+Dense(32, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 1.353935286328937 
+ number of intersections: 3 
+ percentage of intersections: 1.3888888888888888 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 3.2757462250753453 
+ number of intersections: 46 
+ percentage of intersections: 2.3397761953204474
+
+ - val_loss: 0.01547
+
+Comparado com o 2º, este é horrível
+
+--------------------------------------------------------------------------------------------------------
+
+4º modelo (Mars_Model_gray a correr às 15h15):
+
+"tudo igual ao 2º exceto":
+
+Conv2D(filters=32,kernel_size=(3,3),  input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=16,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Conv2D(filters=8,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 2.0039490980685017 
+ number of intersections: 21 
+ percentage of intersections: 9.722222222222223
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 6.2763541255489095 
+ number of intersections: 654 
+ percentage of intersections: 33.26551373346897
+
+ - val_loss: 0.01987
+
+
+Comparado com o 2º, teve um ligeiro overfit
+
+-----------------------------------------------------------------------------------------------------------
+
+5º modelo (Mars_Model3_gray a correr às 15h20):
+
+"tudo igual ao 2º exceto": batch_size = 10
+
+--- RESULTADOS ---:
+	
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 2.805061588711757 
+ number of intersections: 21 
+ percentage of intersections: 9.722222222222223
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 9.700357231600206 
+ number of intersections: 966 
+ percentage of intersections: 49.1353001017294 
+
+ - val_loss: 0.01662
+
+
+Comparado com o 2º, teve 20% mais no treino e pouco menos de 3% no de validação, portanto não é assim tão mau
+
+-----------------------------------------------------------------------------------------------------------
+
+6º modelo (1, sem callbacks):
+
+"tudo igual ao 2º exceto":
+
+Conv2D(filters=16,kernel_size=(3,3),  input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+--- RESULTADOS ---:
+
+Resultados estagnaram, horrível (y deu todo igual)
+
+
+-----------------------------------------------------------------------------------------------------------
+
+7º modelo (2, sem callbacks):
+
+"tudo igual ao 2º exceto": 
+
+Conv2D(filters=32,kernel_size=(3,3),  input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 5.118558306539693 
+ number of intersections: 4 
+ percentage of intersections: 1.8518518518518516 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 10.978767051996936 
+ number of intersections: 590 
+ percentage of intersections: 30.010172939979658 
+
+
+Não vale a pena
+
+-----------------------------------------------------------------------------------------------------------
+
+8º modelo (3):
+
+"tudo igual ao 2º exceto": 
+
+Conv2D(filters=16,kernel_size=(3,3),  input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+--- RESULTADOS ---:
+
+Resultados estagnaram, horrível (y deu todo igual)
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------
+
+9º modelo (1):
+
+"tudo igual ao 2º exceto": 
+
+Conv2D(filters=16,kernel_size=(3,3),  input_shape = (height, width, 1), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+
+Conv2D(filters=32,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Conv2D(filters=64,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Conv2D(filters=128,kernel_size=(3,3), activation='relu'),
+MaxPooling2D(pool_size=(2,2)),
+Dropout(0.25),
+
+Flatten(),
+Dense(100, activation='relu'),
+Dropout(0.25),
+
+Dense(4, activation='sigmoid')
+
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 5.431118967306359 
+ number of intersections: 12 
+ percentage of intersections: 5.555555555555555 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 10.554683062418686 
+ number of intersections: 268 
+ percentage of intersections: 13.631739572736521 
+
+Horrível, mais uma vez, nem com o treino aprendeu
+
+
+--------------------------------------------------------------------------------------------------------
+
+Até agora o melhor foi o 5º modelo (mais ou menos) pois teve um melhor ratio de train e val.
+
+Na parte seguinte vou focar-me nas transformações, onde vão entrar apenas as imagens originais e
+aquelas resultantes da transformação em causa, juntamente com zoom in seguido de random crops
+
+--------------------------------------------------------------------------------------------------------
+
+10º modelo (1):
+
+"tudo igual ao 5º" exceto: transformações - apenas set inicial com zoom e crop nesta ordem tambem 770 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 4.8928977648240775 
+ number of intersections: 4 
+ percentage of intersections: 6.0606060606060606 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 10.693981614494922 
+ number of intersections: 225 
+ percentage of intersections: 29.411764705882355 
+
+
+Tenho de experimentar sem os zooms para ver se é melhor ou se só faz estrilho
+
+--------------------------------------------------------------------------------------------------------
+
+11º modelo (2):
+
+"tudo igual ao 5º" exceto: transformações - emboss e set inicial, ambas com zoom tambem 1523 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 1.6363613855957762 
+ number of intersections: 2 
+ percentage of intersections: 3.0303030303030303 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 9.344027878519917 
+ number of intersections: 160 
+ percentage of intersections: 10.505581089954038 
+
+
+Não funcionou bem, descartar esta transformação
+
+--------------------------------------------------------------------------------------------------------
+
+12º modelo (3):
+
+"tudo igual ao 5º" exceto: transformações - solarize e set inicial, ambas com zoom tambem 1534 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 9.775033507819826 
+ number of intersections: 6 
+ percentage of intersections: 9.090909090909092 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 13.345670297846473 
+ number of intersections: 754 
+ percentage of intersections: 49.152542372881356 
+
+
+Parece ser uma boa transformação, foi a que teve melhor prestação até aqui
+
+--------------------------------------------------------------------------------------------------------
+
+13º modelo (1):
+
+"tudo igual ao 5º" exceto: transformações - superpixels e set inicial, ambas com zoom tambem 1536 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 1.386284725144726 
+ number of intersections: 17 
+ percentage of intersections: 25.757575757575758 
+
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 10.2873832937836 
+ number of intersections: 886 
+ percentage of intersections: 57.682291666666664 
+
+Parece ser uma boa transformação, no entanto a mean % do val é muito baixa, pois os retangulos ficaram enormes na deteção dos tubos
+que se encontram mais longe
+
+--------------------------------------------------------------------------------------------------------
+
+14º modelo (3):
+
+"tudo igual ao 12º" exceto: batch_size = 20
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 11.540512135459052 
+ number of intersections: 5 
+ percentage of intersections: 7.575757575757576 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 10.92988386441187 
+ number of intersections: 548 
+ percentage of intersections: 35.72359843546285 
+
+
+pior que o 12
+
+--------------------------------------------------------------------------------------------------------
+
+15º modelo (2):
+
+"tudo igual ao 10º" exceto: 
+
+        Conv2D(filters=16,kernel_size=(3,3), padding='same', input_shape = (height, width, 1), activation='relu'),
+        MaxPooling2D(pool_size=(2,2)),
+
+        Conv2D(filters=32,kernel_size=(3,3), padding='same', activation='relu'),
+        MaxPooling2D(pool_size=(2,2)),
+        Dropout(0.25),
+
+        Conv2D(filters=64,kernel_size=(3,3), padding='same', activation='relu'),
+        MaxPooling2D(pool_size=(2,2)),
+        Dropout(0.25),
+
+        Conv2D(filters=128,kernel_size=(3,3), padding='same', activation='relu'),
+        MaxPooling2D(pool_size=(2,2)),
+        Dropout(0.25),
+
+        Flatten(),
+        Dense(100, activation='relu'),
+        Dropout(0.25),
+
+        Dense(4, activation='sigmoid')
+
+--- RESULTADOS ---:
+
+horrivel, 0 interseções no de validação
+
+
+--------------------------------------------------------------------------------------------------------
+
+14º modelo (3):
+
+"tudo igual ao 12º" exceto: batch_size = 15
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 2.241856963572589 
+ number of intersections: 15 
+ percentage of intersections: 22.727272727272727 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 7.976051216663857 
+ number of intersections: 742 
+ percentage of intersections: 48.37027379400261 
+
+Teve uma percentagem de interseção de val melhor, no entanto a mean % de area intersetada é muito menor
+
+
+--------------------------------------------------------------------------------------------------------
+
+15º modelo (1):
+
+"tudo igual ao 5º" exceto: transformações - solarize e multiplicative noise no set inicial, ambas com zoom tambem 1529 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 6.780695002436775 
+ number of intersections: 1 
+ percentage of intersections: 1.5151515151515151 
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 14.397839695236966 
+ number of intersections: 419 
+ percentage of intersections: 27.403531720078483
+ 
+
+Péssimo
+
+
+--------------------------------------------------------------------------------------------------------
+
+16º modelo (2):
+
+"tudo igual ao 5º" exceto: sem transformações 591 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 0 
+ number of intersections: 0 
+ percentage of intersections: 0.0 
+ indexes of images with intersections: []
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 18.24094509309937 
+ number of intersections: 20 
+ percentage of intersections: 3.3840947546531304 
+
+
+Isto mostra que o zoom faz diferença e deve ser usado em todas as transformações
+
+
+--------------------------------------------------------------------------------------------------------
+
+17º modelo (2):
+
+"tudo igual ao 5º" exceto: transformações - apenas set inicial com crop e só depois zoom 690 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 1.3458253627703987 
+ number of intersections: 18 
+ percentage of intersections: 27.27272727272727
+
+- for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 4.981162003852295 
+ number of intersections: 438 
+ percentage of intersections: 63.47826086956522 
+
+
+Deu muito melhor do que com o zoom primeiro que o crop (10º modelo), apesar de a mean % ter baixado em ambos
+Parece-me ser uma boa transformação a aplicar
+
+--------------------------------------------------------------------------------------------------------
+
+18º modelo (1):
+
+"tudo igual ao 5º" exceto: transformações - apenas multiplicative noise e também com zoom 1528 treino, 66 validação
+
+--- RESULTADOS ---:
+
+ - for y_val and y_pred:
+ mean % of the area intersected in all intersections: 6.483253325490914 
+ number of intersections: 5 
+ percentage of intersections: 7.575757575757576
+
+ - for y_train and y_pred_train:
+ mean % of the area intersected in all intersections: 10.926949326936212 
+ number of intersections: 480 
+ percentage of intersections: 31.413612565445025 
+
+
+Meio meh, não vale a pena usar
+
+
+----------------------------------------------------------------------------------------------------------
+
+A partir daqui, todos serão parecidos ao 17º modelo, no que toca ao crop antes de zoom
+
+----------------------------------------------------------------------------------------------------------
+
+19º modelo (2)
+
+"tudo igual ao 17º" exceto: com resize = (896, 672), 742 treino 66 validação
+
+--- RESULTADOS ---:
+
+
+----------------
+
+dense mudar o nº de neuronios
+
+primeiro kernel = (1,1) 
+
+---------------------------------
+
+no outro ficheiro:
+
+ultimo:
+ - for y_val and y_pred:
+ mean % of the area intersected in all (good) intersections: 10.666666666666668 
+ number of (good) intersections: 3 
+ percentage of (good) intersections: 4.545454545454546 
+ indexes of images with (good) intersections: [8, 28, 50]
+---------------------------------------------------------------
+
+ultimo epoch guardado:
+ - for y_val and y_pred:
+ mean % of the area intersected in all (good) intersections: 4.0 
+ number of (good) intersections: 6 
+ percentage of (good) intersections: 9.090909090909092 
+ indexes of images with (good) intersections: [13, 17, 24, 32, 36, 42]
+- for y_train and y_pred_train:
+ mean % of the area intersected in all (good) intersections: 16.777851901267518 
+ number of (good) intersections: 1499 
+ percentage of (good) intersections: 72.38049251569291
+
+penultimo:
+- for y_val and y_pred:
+ mean % of the area intersected in all (good) intersections: 6.75 
+ number of (good) intersections: 4 
+ percentage of (good) intersections: 6.0606060606060606 
+ indexes of images with (good) intersections: [17, 24, 36, 42]
+- for y_train and y_pred_train:
+ mean % of the area intersected in all (good) intersections: 16.721441124780316 
+ number of (good) intersections: 1138 
+ percentage of (good) intersections: 54.94929985514244 
+
+antepenultimo:
+- for y_val and y_pred:
+ mean % of the area intersected in all (good) intersections: 1.7500000000000002 
+ number of (good) intersections: 8 
+ percentage of (good) intersections: 12.121212121212121 
+ indexes of images with (good) intersections: [13, 15, 17, 21, 29, 36, 42, 54]
+
+outro:
+ - for y_val and y_pred:
+ mean % of the area intersected in all (good) intersections: 2.3 
+ number of (good) intersections: 10 
+ percentage of (good) intersections: 15.151515151515152 
+ indexes of images with (good) intersections: [13, 15, 23, 24, 27, 32, 36, 42, 48, 54]

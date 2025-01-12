@@ -1,0 +1,33 @@
+A pasta principal referente ao dataset possui 3 pastas:
+
+--- field_test_images
+
+	- darknet_labels: contém as directories para cada imagem em test1 e test2
+
+	- test1: contém pastas com imagens e txt (loccam_left, loccam_right, navcam_left, navcam_right)
+		 contém pastas com ficheiros de texto (loccam_depth, navcam_depth)
+		 contém 4 ficheiros csv de cada uma das primeiras pastas mencionadas (test1_loccam_left.csv, test1_loccam_right.csv, test1_navcam_left.csv, test1			 _navcam_right.csv)
+
+	- test2: o mesmo que o test1
+
+
+
+--- sample_orientation_images
+
+	- loccam: contém as imagens do tubo de perto, com um csv file com informações de cada imagem
+
+	- navcam: o mesmo que a loccam
+	
+
+
+--- train_images
+
+	- darknet_labels: contém as directories para cada imagem de real_train, real_valid, synthetic_train, synthethic_valid
+
+	- real: o mesmo que synthetic
+
+	- synthetic: contém duas pastas (train e valid) onde cada uma contém imagens e txt
+		     contém 1 ficheiro csv, com informações de todas as imagens
+
+
+
